@@ -1,0 +1,131 @@
+// Prisma 6 schema for ACC Demo
+// Generator outputs to src/generated/prisma (Prisma 6 default)
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Registration
+// Raw incoming record from ACC systems (courses, hut bookings, memberships).
+// rawData holds the full original payload as JSON (source of truth).
+// email/firstName/lastName are extracted for fast querying + duplicate detection.
+// ─────────────────────────────────────────────────────────────────────────────
+model Registration {
+  id               String       @id @default(cuid())
+  createdAt        DateTime     @default(now()) @map("created_at")
+  updatedAt        DateTime     @updatedAt @map("updated_at")
+
+  sourceType       String       @map("source_type")   // "COURSE" | "HUT_BOOKING" | "MEMBERSHIP"
+  externalId       String       @map("external_id")   // ACC's own ID for this record
+  sourceRef        String?      @map("source_ref")    // human-readable ref (e.g. booking #)
+
+  // Extracted columns — populated on ingest from rawData
+  // rawData is the source of truth; these exist for fast filtering + duplicate detection
+  email            String?
+  firstName        String?      @map("first_name")
+  lastName         String?      @map("last_name")
+
+  rawData          Json         @map("raw_data")
+
+  validationStatus String       @default("PENDING") @map("validation_status")
+  // PENDING | VALID | INVALID
+  validationErrors Json?        @map("validation_errors")
+  // array of { field: string, message: string }
+
+  syncStatus       String       @default("PENDING") @map("sync_status")
+  // PENDING | SYNCED | FAILED | SKIPPED
+
+  hubspotId        String?      @map("hubspot_id")
+
+  syncRecords      SyncRecord[]
+
+  @@unique([sourceType, externalId])
+  @@index([email])
+  @@map("registrations")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SyncRun
+// One batch execution of the sync pipeline.
+// ─────────────────────────────────────────────────────────────────────────────
+model SyncRun {
+  id             String       @id @default(cuid())
+  startedAt      DateTime     @default(now()) @map("started_at")
+  completedAt    DateTime?    @map("completed_at")
+
+  status         String       @default("RUNNING")
+  // RUNNING | COMPLETED | FAILED | CANCELLED
+
+  triggeredBy    String?      @map("triggered_by")
+  // Descriptive label for demo (e.g. "Manual", "Scheduled")
+
+  // Denormalized counts for fast dashboard queries
+  totalRecords   Int          @default(0) @map("total_records")
+  syncedRecords  Int          @default(0) @map("synced_records")
+  failedRecords  Int          @default(0) @map("failed_records")
+  skippedRecords Int          @default(0) @map("skipped_records")
+
+  syncRecords    SyncRecord[]
+
+  @@map("sync_runs")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SyncRecord
+// Per-record audit trail within a SyncRun.
+// ─────────────────────────────────────────────────────────────────────────────
+model SyncRecord {
+  id             String       @id @default(cuid())
+  createdAt      DateTime     @default(now()) @map("created_at")
+
+  syncRunId      String       @map("sync_run_id")
+  syncRun        SyncRun      @relation(fields: [syncRunId], references: [id], onDelete: Cascade)
+
+  registrationId String       @map("registration_id")
+  registration   Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+
+  action         String
+  // CREATED | UPDATED | SKIPPED | FAILED
+
+  hubspotId      String?      @map("hubspot_id")
+  errorMessage   String?      @map("error_message")
+  durationMs     Int?         @map("duration_ms")
+
+  @@map("sync_records")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FieldMapping
+// DB-driven config for how ACC source fields map to HubSpot properties.
+// ─────────────────────────────────────────────────────────────────────────────
+model FieldMapping {
+  id              String   @id @default(cuid())
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  sourceType      String   @map("source_type")
+  // COURSE | HUT_BOOKING | MEMBERSHIP
+
+  sourceField     String   @map("source_field")
+  // dot-notation path into rawData (e.g. "member.firstName")
+
+  hubspotObject   String   @map("hubspot_object")
+  // CONTACT | DEAL | COMPANY
+
+  hubspotProperty String   @map("hubspot_property")
+  // HubSpot internal property name (e.g. "firstname")
+
+  transformFn     String?  @map("transform_fn")
+  // optional transform hint (e.g. "normalizePhone", "parseDate")
+
+  isActive        Boolean  @default(true) @map("is_active")
+
+  @@unique([sourceType, sourceField, hubspotObject, hubspotProperty])
+  @@map("field_mappings")
+}
