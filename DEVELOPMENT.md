@@ -13,7 +13,7 @@ incoming registrations from 3 messy source systems → validated → synced to H
 |-------|--------|
 | Framework | Next.js 16 App Router + TypeScript strict |
 | UI | Tailwind CSS v4 + Shadcn/UI (New York, zinc) |
-| Database | Prisma 6 + PostgreSQL (Neon) |
+| Database | Prisma 7 + PostgreSQL (Neon) |
 | API | HubSpot Private App (real, live) |
 | Auth | None (public dashboard, demo context) |
 | Notifications | Sonner toasts |
@@ -61,6 +61,8 @@ npm run dev
 ```bash
 npm run db:generate   # Regenerate Prisma client types (src/generated/prisma/)
 npm run db:migrate    # Run pending migrations (creates migration files)
+npm run db:migrate:deploy # Apply committed migrations (CI/production)
+npm run db:status     # Show migration and connection status
 npm run db:push       # Push schema without migration files (rapid prototyping)
 npm run db:seed       # Seed with ACC demo data
 npm run db:studio     # Open Prisma Studio (DB browser UI)
