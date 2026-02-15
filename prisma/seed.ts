@@ -11,7 +11,9 @@
  */
 
 import "dotenv/config";
-import { PrismaClient } from "../src/generated/prisma";
+import { Pool } from "pg";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaClient } from "../src/generated/prisma/client";
 import type {
   CourseRegistrationPayload,
   HutBookingPayload,
@@ -19,7 +21,9 @@ import type {
   SourceType,
 } from "../src/lib/types";
 
-const db = new PrismaClient();
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const adapter = new PrismaPg(pool);
+const db = new PrismaClient({ adapter });
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Raw source data — as if pulled from Hapily, Mews, and a manual CSV

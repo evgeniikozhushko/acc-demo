@@ -34,9 +34,9 @@ model Registration {
   rawData          Json         @map("raw_data")
 
   validationStatus String       @default("PENDING") @map("validation_status")
-  // PENDING | VALID | INVALID
+  // PENDING | VALID | WARNING | BLOCKED | DUPLICATE
   validationErrors Json?        @map("validation_errors")
-  // array of { field: string, message: string }
+  // array of { severity, code, message, field? }
 
   syncStatus       String       @default("PENDING") @map("sync_status")
   // PENDING | SYNCED | FAILED | SKIPPED

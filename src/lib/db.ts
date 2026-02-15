@@ -1,7 +1,10 @@
 import "server-only";
 
-// Prisma 6: client is generated to src/generated/prisma
-import { PrismaClient } from "@/generated/prisma";
+import { Pool } from "pg";
+import { PrismaPg } from "@prisma/adapter-pg";
+// Prisma 7: client is generated to src/generated/prisma
+// Use the explicit client.ts entry (Prisma 7 has no index.ts barrel)
+import { PrismaClient } from "@/generated/prisma/client";
 
 // Standard Next.js singleton pattern.
 // In development, Next.js hot-reloads invalidate module cache, which would
@@ -11,13 +14,12 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-export const db =
-  globalForPrisma.prisma ??
-  new PrismaClient({
-    log:
-      process.env.NODE_ENV === "development"
-        ? ["error", "warn"]
-        : ["error"],
-  });
+function createClient() {
+  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  const adapter = new PrismaPg(pool);
+  return new PrismaClient({ adapter });
+}
+
+export const db = globalForPrisma.prisma ?? createClient();
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = db;

@@ -5,12 +5,22 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 export type SourceType = "COURSE" | "HUT_BOOKING" | "MEMBERSHIP";
-export type ValidationStatus = "PENDING" | "VALID" | "INVALID";
+export type ValidationStatus = "PENDING" | "VALID" | "WARNING" | "BLOCKED" | "DUPLICATE";
+
+export type ValidationIssueSeverity = "error" | "warning" | "info";
+
+export type ValidationIssue = {
+  severity: ValidationIssueSeverity;
+  code: string;
+  message: string;
+  field?: string;
+};
 export type SyncStatus = "PENDING" | "SYNCED" | "FAILED" | "SKIPPED";
 export type SyncRunStatus = "RUNNING" | "COMPLETED" | "FAILED" | "CANCELLED";
 export type SyncAction = "CREATED" | "UPDATED" | "SKIPPED" | "FAILED";
 export type HubSpotObject = "CONTACT" | "DEAL" | "COMPANY";
 
+/** @deprecated Use ValidationIssue instead */
 export type ValidationError = {
   field: string;
   message: string;
