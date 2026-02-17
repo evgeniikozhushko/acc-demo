@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { getRegistrationsForDashboard } from "@/server/registrations/query";
 import { RegistrationsTable } from "@/components/dashboard/registrations-table";
+import { RunSyncButton } from "@/components/dashboard/run-sync-button";
 
 export const metadata = { title: "Registrations" };
 
@@ -37,6 +38,9 @@ export default function RegistrationsPage() {
           Incoming records from Hapily (courses), Mews (hut bookings), and Sections (memberships).
           Validation runs on load and is persisted to the database.
         </p>
+        <div className="mt-4">
+          <RunSyncButton />
+        </div>
       </div>
 
       <Suspense

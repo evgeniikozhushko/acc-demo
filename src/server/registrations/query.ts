@@ -1,7 +1,12 @@
 import "server-only";
 
 import { db } from "@/lib/db";
-import type { SourceType, ValidationStatus, ValidationIssue } from "@/lib/types";
+import type {
+  SourceType,
+  ValidationStatus,
+  ValidationIssue,
+  SyncStatus,
+} from "@/lib/types";
 import {
   validateRecord,
   findDuplicateIds,
@@ -25,7 +30,7 @@ export type RegistrationRow = {
   email: string | null;
   validationStatus: ValidationStatus;
   validationIssues: ValidationIssue[];
-  syncStatus: string;
+  syncStatus: SyncStatus;
   hubspotId: string | null;
   updatedAt: Date;
   // panels for the preview drawer
@@ -135,7 +140,7 @@ export async function getRegistrationsForDashboard(opts?: {
       email: r.email,
       validationStatus,
       validationIssues,
-      syncStatus: r.syncStatus,
+      syncStatus: r.syncStatus as SyncStatus,
       hubspotId: r.hubspotId,
       updatedAt: r.updatedAt,
       rawData: r.rawData,

@@ -18,7 +18,12 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
-import type { SourceType, ValidationStatus, ValidationIssue } from "@/lib/types";
+import type {
+  SourceType,
+  ValidationStatus,
+  ValidationIssue,
+  SyncStatus,
+} from "@/lib/types";
 import type { CanonicalContact } from "@/server/registrations/canonical";
 import type { HubSpotContactProperties } from "@/server/registrations/hubspot-payload";
 
@@ -36,7 +41,7 @@ export type RegistrationRowData = {
   email: string | null;
   validationStatus: ValidationStatus;
   validationIssues: ValidationIssue[];
-  syncStatus: string;
+  syncStatus: SyncStatus;
   hubspotId: string | null;
   updatedAt: Date;
   rawData: unknown;
@@ -92,6 +97,34 @@ const SOURCE_LABELS: Record<SourceType, string> = {
   HUT_BOOKING: "Hut Booking",
   MEMBERSHIP: "Membership",
 };
+
+const SYNC_STATUS_CONFIG: Record<SyncStatus, { label: string; className: string }> = {
+  PENDING: {
+    label: "Pending",
+    className: "bg-zinc-100 text-zinc-600 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-400",
+  },
+  SYNCED: {
+    label: "Synced",
+    className: "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400",
+  },
+  FAILED: {
+    label: "Failed",
+    className: "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-400",
+  },
+  SKIPPED: {
+    label: "Skipped",
+    className: "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400",
+  },
+};
+
+function SyncStatusBadge({ status }: { status: SyncStatus }) {
+  const cfg = SYNC_STATUS_CONFIG[status] ?? SYNC_STATUS_CONFIG.PENDING;
+  return (
+    <Badge variant="outline" className={cfg.className}>
+      {cfg.label}
+    </Badge>
+  );
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // JSON panel helper
@@ -271,14 +304,15 @@ export function RegistrationsTable({ rows }: { rows: RegistrationRowData[] }) {
               <TableHead>Email</TableHead>
               <TableHead>Source</TableHead>
               <TableHead>Ref</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead>Validation</TableHead>
+              <TableHead>Sync</TableHead>
               <TableHead className="w-20" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {displayed.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground py-10">
+                <TableCell colSpan={7} className="text-center text-muted-foreground py-10">
                   No registrations found.
                 </TableCell>
               </TableRow>
@@ -301,6 +335,9 @@ export function RegistrationsTable({ rows }: { rows: RegistrationRowData[] }) {
                   </TableCell>
                   <TableCell>
                     <StatusBadge status={row.validationStatus} />
+                  </TableCell>
+                  <TableCell>
+                    <SyncStatusBadge status={row.syncStatus} />
                   </TableCell>
                   <TableCell>
                     <Button
